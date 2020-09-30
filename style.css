@@ -79,6 +79,6 @@ html, body {
 
 .buttonscontainer button {
     min-width: 45%;
-    min-height: 10vh;
+    min-height: 5vh;
     margin: .5vw;
 }

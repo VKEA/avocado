@@ -1,5 +1,44 @@
 class Pet {
     constructor (name) {
+        if (this.getCookie('data') !== '') {
+            const decodedCookie = JSON.parse(this.getCookie('data'))
+            console.log(decodedCookie)
+            this.stats = {
+                'spriteState': decodedCookie.stats.spriteState,
+                'sleepState': decodedCookie.stats.sleepState,
+                'happiness': decodedCookie.stats.happiness,
+                'hunger': decodedCookie.stats.hunger,
+                'health': decodedCookie.stats.health,
+                'sleepiness': decodedCookie.stats.sleepiness,
+                'affection': decodedCookie.stats.affection
+            }
+            this.clickerStats = {
+                'clickCount': decodedCookie.clickerStats.clickCount,
+                'multiplier': decodedCookie.clickerStats.multiplier,
+                'funds': decodedCookie.clickerStats.funds,
+                'food': decodedCookie.clickerStats.food,
+                'medicine': decodedCookie.clickerStats.medicine
+            }
+    
+        }
+        else {
+            this.stats = {
+                'spriteState': 'neutral',
+                'sleepState': false,
+                'happiness': 75,
+                'hunger': 80,
+                'health': 100,
+                'sleepiness': 80,
+                'affection': 10
+            }
+            this.clickerStats = {
+                'clickCount': 0,
+                'multiplier': 1,
+                'funds': 10,
+                'food': 5,
+                'medicine': 1
+            }    
+        }
         this.name = name
         this.sprites = {
             'neutral': 'neutral.svg',
@@ -8,23 +47,6 @@ class Pet {
             'angry': 'angry.svg',
             'sleeping': 'sleeping.svg'
         }
-        this.stats = {
-            'spriteState': 'neutral',
-            'sleepState': false,
-            'happiness': 75,
-            'hunger': 80,
-            'health': 100,
-            'sleepiness': 80,
-            'affection': 10
-        }
-        this.clickerStats = {
-            'clickCount': 0,
-            'multiplier': 1,
-            'funds': 10,
-            'food': 5,
-            'medicine': 1
-        }
-
         this.sprite = document.getElementById('tamagochi')
         this.infoContainer = document.getElementById('pet-data')
         this.feedButton = document.getElementById('feed')
@@ -33,6 +55,8 @@ class Pet {
         this.buyMedButton = document.getElementById('buy-medicine')
 
         this.randomTick = this.randomTick.bind(this)
+        this.setCookie = this.setCookie.bind(this)
+        this.getCookie = this.getCookie.bind(this)
 
         setInterval(this.randomTick, 1000)
 
@@ -47,6 +71,7 @@ class Pet {
         const hungerTick = Math.floor(Math.random() * 10000)
         const healthTick = Math.floor(Math.random() * 12000)
         const sleepTick = Math.floor(Math.random() * 5000)
+        const moneyTick = Math.floor(Math.random() * 150)
 
         if (hungerTick < 100) {
             if (this.stats.sleepState == true) {
@@ -83,7 +108,7 @@ class Pet {
         if (sleepTick < 100) {
             if (this.stats.sleepState == true) {
                 this.stats.sleepiness++
-                if (this.stats.sleepiness >= 80 && sleepTick <= 80) {
+                if (this.stats.sleepiness >= 80 && sleepTick <= 50) {
                     this.stats.sleepState = false
                     if (document.hasFocus()) {
                         this.stats.affection = this.stats.affection + 10
@@ -92,7 +117,7 @@ class Pet {
             }
             else {
                 this.stats.sleepiness--
-                if (this.stats.sleepiness <= 10) {
+                if (this.stats.sleepiness <= 10 && sleepTick <= 50) {
                     this.stats.sleepState = true
                 }
             }
@@ -105,6 +130,10 @@ class Pet {
             }
             console.log('sleepState: '+this.stats.sleepState)
             console.log('sleepiness: '+this.stats.sleepiness)
+        }
+
+        if (moneyTick < 100) {
+            this.petClick()
         }
 
         if (this.stats.sleepState == true){
@@ -151,6 +180,27 @@ class Pet {
         <p>Sleepiness: <div class="bar"><div class="progress" style="width: ${this.stats.sleepiness}%;"></div></div></p>
         <p>Affection: <div class="bar"><div class="progress" style="width: ${this.stats.affection}%;"></div></div></p>
         `
+
+        this.setCookie('data', JSON.stringify(
+            {
+                'stats': {
+                    'spriteState': this.stats.spriteState,
+                    'sleepState': this.stats.sleepState,
+                    'happiness': this.stats.happiness,
+                    'hunger': this.stats.hunger,
+                    'health': this.stats.health,
+                    'sleepiness': this.stats.sleepiness,
+                    'affection': this.stats.affection
+                },
+                'clickerStats': {
+                    'clickCount': this.clickerStats.clickCount,
+                    'multiplier': this.clickerStats.multiplier,
+                    'funds': this.clickerStats.funds,
+                    'food': this.clickerStats.food,
+                    'medicine': this.clickerStats.medicine
+                }
+            }
+        ), 365)
     }
 
     petClick () {
@@ -167,7 +217,7 @@ class Pet {
     }
 
     feedPet () {
-        if (this.clickerStats.food == 0) {
+        if (this.clickerStats.food == 0 || this.stats.hunger == 100) {
             return
         }
         if (this.stats.sleepState == true) {
@@ -180,7 +230,7 @@ class Pet {
     }
 
     healPet () {
-        if (this.clickerStats.medicine == 0) {
+        if (this.clickerStats.medicine == 0 || this.stats.health == 100) {
             return
         }
         if (this.stats.sleepState == true) {
@@ -206,5 +256,28 @@ class Pet {
         }
         this.clickerStats.medicine++
         this.clickerStats.funds = this.clickerStats.funds - 50
+    }
+
+    setCookie (cname, cvalue, exdays) {
+        var d = new Date();
+        d.setTime(d.getTime() + (exdays*24*60*60*1000));
+        var expires = "expires="+ d.toUTCString();
+        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    }
+
+    getCookie (cname) {
+        var name = cname + "=";
+        var decodedCookie = decodeURIComponent(document.cookie);
+        var ca = decodedCookie.split(';');
+        for(var i = 0; i < ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+          }
+          if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+          }
+        }
+        return "";
     }
 }
